@@ -1,7 +1,11 @@
 import mongoose from "mongoose";
+//  Manages the version number of records
+//  and customises the update operation to find the correct version
+import { updateIfCurrentPlugin } from "mongoose-update-if-current";
 import { Order, OrderStatus } from "./order";
 
 interface TicketAttrs {
+  id: string;
   title: string;
   price: number;
 }
@@ -9,11 +13,16 @@ interface TicketAttrs {
 export interface TicketDoc extends mongoose.Document {
   title: string;
   price: number;
+  version: number;
   isReserved(): Promise<boolean>;
 }
 
 interface TicketModel extends mongoose.Model<TicketDoc> {
   build(attrs: TicketAttrs): TicketDoc;
+  findByEvent(event: {
+    id: string;
+    version: number;
+  }): Promise<TicketDoc | null>;
 }
 
 const ticketSchema = new mongoose.Schema(
@@ -38,8 +47,33 @@ const ticketSchema = new mongoose.Schema(
   }
 );
 
+//  Optimistic concurrency (use versioning on records)
+//  By default versioning key/property is __v
+ticketSchema.set("versionKey", "version");
+ticketSchema.plugin(updateIfCurrentPlugin);
+
+//  If were not using the update if current plugin we could achieve the same
+//  behaviour as below
+// ticketSchema.pre("save", function (done) {
+//   //  @ts-ignore
+//   this.$where = {
+//     version: this.get("version") - 1,
+//   };
+// });
+
 ticketSchema.statics.build = (attrs: TicketAttrs) => {
-  return new Ticket(attrs);
+  return new Ticket({
+    _id: attrs.id,
+    title: attrs.title,
+    price: attrs.price,
+  });
+};
+
+ticketSchema.statics.findByEvent = (event: { id: string; version: number }) => {
+  return Ticket.findOne({
+    _id: event.id,
+    version: event.version - 1, //  Need to find previous version (so that no events/updates have been missed)
+  });
 };
 
 //  Cannot be an arrow function as we are using
