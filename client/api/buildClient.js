@@ -11,7 +11,7 @@ export default ({ req }) => {
     //  kubectl get pods -n kube-system
     //  kubectl describe pod ingress-nginx-controller-789d9c4dc-f8tq6 -n kube-system
     //  to get ip address
-    //  "http://ingress-nginx.ingress-nginx.svc.cluster.local/api/users/currentuser"
+    //  "http://ingress-nginx.ingress-nginx.svc.cluster.local"  //  If not minikube would be using this
     return axios.create({
       baseURL: "http://192.168.99.109",
       headers: req.headers,
