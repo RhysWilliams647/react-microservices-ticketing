@@ -13,7 +13,8 @@ export default ({ req }) => {
     //  to get ip address
     //  "http://ingress-nginx.ingress-nginx.svc.cluster.local"  //  If not minikube would be using this
     return axios.create({
-      baseURL: "http://192.168.99.109",
+      //baseURL: "http://192.168.99.109",
+      baseURL: "http://www.rwtickets-app-prod.xyz/",
       headers: req.headers,
     });
   } else {
